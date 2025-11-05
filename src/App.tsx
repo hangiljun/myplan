@@ -4,6 +4,39 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 
+/** ──────────────────────────────────────────────────────────────────────────
+ *  한국 공휴일(일/공휴일/대체공휴일) 2025~2026
+ *  - 형식: YYYY-MM-DD
+ *  - 선거일/정부 지정 임시공휴일은 해마다 달라 제외(추가되면 이 Set에 더 넣으면 됨)
+ *  참고: timeanddate 2025/2026, time.is 2026 KR calendar, 대체공휴일 제도 안내
+ *  ────────────────────────────────────────────────────────────────────────── */
+const HOLIDAYS_KR = new Set<string>([
+  /** 2025 */
+  "2025-01-01",                // 신정
+  "2025-01-27", "2025-01-28", "2025-01-29", "2025-01-30", // 설연휴(전/당/익) + 연휴 확대
+  "2025-03-01", "2025-03-03",  // 삼일절 + 대체(월)
+  "2025-05-05", "2025-05-06",  // 어린이날(석가탄신일과 겹침), 대체(화)
+  "2025-06-06",                // 현충일
+  "2025-08-15",                // 광복절
+  "2025-10-03",                // 개천절
+  "2025-10-05", "2025-10-06", "2025-10-07", "2025-10-08", // 추석(일~화) + 대체(수)
+  "2025-10-09",                // 한글날
+  "2025-12-25",                // 성탄절
+
+  /** 2026 */
+  "2026-01-01",                // 신정
+  "2026-02-16", "2026-02-17", "2026-02-18", // 설연휴(전/당/익)
+  "2026-03-01", "2026-03-02",  // 삼일절 + 대체(월)
+  "2026-05-05",                // 어린이날
+  "2026-05-24", "2026-05-25",  // 석가탄신일(일), 대체(월)
+  "2026-06-06",                // 현충일
+  "2026-08-15", "2026-08-17",  // 광복절(토), 대체(월)
+  "2026-09-24", "2026-09-25", "2026-09-26", // 추석(전/당/익)
+  "2026-10-03", "2026-10-05",  // 개천절(토), 대체(월)
+  "2026-10-09",                // 한글날
+  "2026-12-25",                // 성탄절
+]);
+
 // ── Utils ─────────────────────────────────────────────────────────
 const fmtDateKey = (d: Date) => {
   const y = d.getFullYear();
@@ -71,7 +104,7 @@ function SectionHeader({eyebrow,title,action}:{eyebrow?:string;title:string;acti
   );
 }
 
-// ── Calendar + Todos (중요도 ★) ───────────────────────────────────
+// ── Calendar + Todos (중요도 ★, 일/공휴일 빨간색) ────────────────
 function Calendar({current,onPrev,onNext,selected,onSelect,todos}:{current:Date;onPrev:()=>void;onNext:()=>void;selected:Date|null;onSelect:(d:Date)=>void;todos:Record<string,any[]>;}) {
   const start = startOfMonth(current); const end = endOfMonth(current);
   const startWeekday = (start.getDay()+6)%7; const daysInMonth = end.getDate();
@@ -112,13 +145,25 @@ function Calendar({current,onPrev,onNext,selected,onSelect,todos}:{current:Date;
           const cnt = key ? (countMap[key]||0) : 0;
           const stars = key ? (starMap[key]||0) : 0;
           const dots = Array.from({length:Math.min(cnt,10)});
+
+          // 일요일/공휴일 판별
+          const isSunday = d ? d.getDay() === 0 : false; // Sun=0
+          const isHoliday = d ? HOLIDAYS_KR.has(fmtDateKey(d)) : false;
+          const dateColorClass = isSelected
+            ? "text-white"
+            : (isSunday || isHoliday) ? "text-red-500" : "text-gray-800";
+
           return (
             <button key={i} disabled={!d} onClick={()=>d&&onSelect(d)}
               className={`h-20 rounded-xl border text-sm flex flex-col items-center p-2 transition ${
-                d ? (isSelected?"bg-indigo-600 text-white border-indigo-600":"bg-white hover:bg-indigo-50 border-gray-200 text-gray-800")
+                d ? (isSelected?"bg-indigo-600 text-white border-indigo-600":"bg-white hover:bg-indigo-50 border-gray-200")
                   : "bg-gray-50 border-transparent cursor-default"}`}>
-              <span className="self-end">{d?d.getDate():""}</span>
+              {/* 날짜 숫자 */}
+              <span className={`self-end ${dateColorClass}`}>{d?d.getDate():""}</span>
+
+              {/* 중요도 별(최대 3개) */}
               {d && <div className="mt-1 text-amber-500 text-xs">{"★".repeat(Math.min(stars,3))}</div>}
+              {/* 할 일 개수 점표시 */}
               {d && <div className={`mt-auto mb-1 flex flex-wrap gap-1 justify-center ${isSelected?"text-white":"text-red-500"}`}>
                 {dots.map((_,idx)=><span key={idx} className={`h-1.5 w-1.5 rounded-full ${isSelected?"bg-white":"bg-red-500"}`}></span>)}
               </div>}
@@ -129,6 +174,7 @@ function Calendar({current,onPrev,onNext,selected,onSelect,todos}:{current:Date;
     </Card>
   );
 }
+
 function TodoPanel({date,todos,setTodos}:{date:Date|null;todos:Record<string,any[]>;setTodos:(v:any)=>void;}) {
   const key = date?fmtDateKey(date):null;
   const [text,setText]=useState(""); const [stars,setStars]=useState(0);
@@ -494,7 +540,7 @@ export default function App(){
   const [selectedDate,setSelectedDate]=useState<Date|null>(new Date());
   const [todos,setTodos]=useLocalStorage("pa_todos",{} as Record<string,any[]>);
   const thisYear=new Date().getFullYear();
-  const [goalYear,setGoalYear]=useState(thisYear);
+  const [goalYear,setGoalYear]==useState(thisYear);
   const [goalsByYear,setGoalsByYear]=useLocalStorage("pa_goals_v3",{} as Record<string,any[]>);
   const [assets,setAssets]=useLocalStorage("pa_assets",{} as Record<string,any>);
 
