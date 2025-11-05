@@ -1,0 +1,16 @@
+myplan
+├─ .github/
+│   └─ workflows/
+│      └─ deploy.yml
+├─ src/
+│   ├─ App.tsx
+│   ├─ index.css
+│   └─ main.tsx
+├─ .gitignore
+├─ index.html
+├─ package.json
+├─ postcss.config.js
+├─ tailwind.config.ts
+├─ tsconfig.json
+├─ vercel.json           # (선택) Vercel용 편의 설정
+└─ vite.config.ts
