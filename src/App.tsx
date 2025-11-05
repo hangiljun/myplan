@@ -473,3 +473,102 @@ function Board(){
         <ul className="space-y-2">
           {posts.map((p:any)=>(
             <li key={p.id} className="p-3 rounded-xl border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="font-medium text-gray-900 truncate">{p.title || "(제목 없음)"}<span className="ml-2 text-xs text-gray-500">- {p.author || "익명"}</span></div>
+                {adminUnlocked && <button onClick={()=>del(p.id)} className="text-xs text-gray-500 hover:text-gray-800">삭제</button>}
+              </div>
+              {p.content && <div className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{p.content}</div>}
+              <div className="mt-1 text-xs text-gray-400">{new Date(p.ts).toLocaleString()}</div>
+            </li>
+          ))}
+          {posts.length===0 && <div className="text-sm text-gray-500">게시글이 없습니다.</div>}
+        </ul>
+      </div>
+    </Card>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────
+export default function App(){
+  const [currentMonth,setCurrentMonth]=useState(new Date());
+  const [selectedDate,setSelectedDate]=useState<Date|null>(new Date());
+  const [todos,setTodos]=useLocalStorage("pa_todos",{} as Record<string,any[]>);
+  const thisYear=new Date().getFullYear();
+  const [goalYear,setGoalYear]=useState(thisYear);
+  const [goalsByYear,setGoalsByYear]=useLocalStorage("pa_goals_v3",{} as Record<string,any[]>);
+  const [assets,setAssets]=useLocalStorage("pa_assets",{} as Record<string,any>);
+
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-800">
+      <header className="sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-white/70 bg-white/60 border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-xl bg-indigo-600" />
+            <span className="font-semibold">My Assistant · Journal</span>
+          </div>
+          <nav className="hidden sm:flex items-center gap-2">
+            <Button variant="ghost" href="#calendar">캘린더</Button>
+            <Button variant="ghost" href="#goals">목표</Button>
+            <Button variant="ghost" href="#assets">자산</Button>
+            <Button variant="ghost" href="#board">게시판</Button>
+          </nav>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={()=>setSelectedDate(new Date())}>오늘</Button>
+          </div>
+        </div>
+        <div className="sm:hidden overflow-x-auto px-3 pb-2 flex gap-2">
+          <Button variant="ghost" href="#calendar" className="shrink-0">캘린더</Button>
+          <Button variant="ghost" href="#goals" className="shrink-0">목표</Button>
+          <Button variant="ghost" href="#assets" className="shrink-0">자산</Button>
+          <Button variant="ghost" href="#board" className="shrink-0">게시판</Button>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-6 space-y-8">
+        <motion.section id="today" initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.35}}>
+          <Card>
+            <div className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div className="text-sm text-indigo-600 font-medium uppercase tracking-wide">Today</div>
+                <div className="text-2xl font-bold text-gray-900 mt-1">{fmtDateKey(new Date())}</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button onClick={()=>setSelectedDate(new Date())}>오늘 할 일</Button>
+              </div>
+            </div>
+          </Card>
+        </motion.section>
+
+        <motion.section id="calendar" initial={{opacity:0,y:8}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:0.35}}>
+          <SectionHeader eyebrow="This Month" title="이번달 할 일" />
+          <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Calendar current={currentMonth} onPrev={()=>setCurrentMonth(addMonths(currentMonth,-1))} onNext={()=>setCurrentMonth(addMonths(currentMonth,1))}
+              selected={selectedDate} onSelect={setSelectedDate} todos={todos} />
+            <TodoPanel date={selectedDate} todos={todos} setTodos={setTodos} />
+          </div>
+        </motion.section>
+
+        <motion.section id="goals" initial={{opacity:0,y:8}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:0.35}}>
+          <SectionHeader eyebrow="Goals" title={`목표 (연도별) — ${goalYear}년`} />
+          <div className="mt-4">
+            <GoalsPanel goalsByYear={goalsByYear} setGoalsByYear={setGoalsByYear} year={goalYear} setYear={setGoalYear} />
+          </div>
+        </motion.section>
+
+        <motion.section id="assets" initial={{opacity:0,y:8}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:0.35}}>
+          <SectionHeader eyebrow="Assets" title="자산 현황 & 추이 (연속 12개월)" />
+          <div className="mt-4">
+            <AssetsPanel assets={assets} setAssets={setAssets} />
+          </div>
+        </motion.section>
+
+        <motion.section id="board" initial={{opacity:0,y:8}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:0.35}}>
+          <SectionHeader eyebrow="Community" title="자유게시판" />
+          <div className="mt-4">
+            <Board />
+          </div>
+        </motion.section>
+      </main>
+    </div>
+  );
+}
