@@ -12,7 +12,7 @@ import {
 
 /** ──────────────────────────────────────────────────────────────────────────
  *  한국 공휴일(일/공휴일/대체공휴일) 2025~2026
- *  - 선거/임시공휴일은 제외. 필요하면 아래 Set에 날짜 한 줄 추가
+ *  - 선거/임시공휴일은 제외.
  *  ────────────────────────────────────────────────────────────────────────── */
 const HOLIDAYS_KR = new Set<string>([
   /** 2025 */
@@ -70,7 +70,6 @@ const endOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 0);
 const addMonths = (d: Date, n: number) =>
   new Date(d.getFullYear(), d.getMonth() + n, 1);
 
-// 억 단위 포맷
 const formatEok = (v?: number | null) => {
   if (v == null || isNaN(v as number)) return "-";
   const num = (v as number) / 1e8;
@@ -94,7 +93,7 @@ function useLocalStorage<T>(key: string, initialValue: T) {
   return [value, setValue] as const;
 }
 
-// ── UI atoms ──────────────────────────────────────────────────────
+// ── UI ────────────────────────────────────────────────────────────
 function Button({
   children,
   variant = "primary",
@@ -182,23 +181,10 @@ function TextArea({
     />
   );
 }
-function SectionHeader({
-  eyebrow,
-  title,
-  action,
-}: {
-  eyebrow?: string;
-  title: string;
-  action?: any;
-}) {
+function SectionHeader({ title, action }: { title: string; action?: any }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-      <div>
-        {eyebrow && (
-          <p className="text-indigo-600 text-sm font-medium tracking-wide">{eyebrow}</p>
-        )}
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{title}</h2>
-      </div>
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{title}</h2>
       {action}
     </div>
   );
@@ -276,20 +262,20 @@ function Calendar({
           const isSaturday = d ? d.getDay() === 6 : false;
           const isHoliday = d ? HOLIDAYS_KR.has(fmtDateKey(d)) : false;
 
+          // 주말 배경색 (선택되지 않았을 때만)
+          let weekendBg = "";
+          if (d && !isSelected) {
+            if (isSunday || isHoliday) weekendBg = "bg-red-50";
+            else if (isSaturday) weekendBg = "bg-blue-50";
+          }
+
           const dateColorClass = isSelected
             ? "text-white"
             : isSunday || isHoliday
             ? "text-red-500"
-            : "text-gray-800";
-
-          // 주말 배경 색상 (선택되었을 때는 선택색이 우선)
-          const weekendBg = isSelected
-            ? ""
-            : isSunday
-            ? "bg-red-50"
             : isSaturday
-            ? "bg-blue-50"
-            : "bg-white";
+            ? "text-blue-600"
+            : "text-gray-800";
 
           return (
             <button
@@ -300,7 +286,7 @@ function Calendar({
                 d
                   ? isSelected
                     ? "bg-indigo-600 text-white border-indigo-600"
-                    : `${weekendBg} hover:bg-indigo-50 border-gray-200`
+                    : `${weekendBg} bg-white/50 hover:bg-indigo-50 border-gray-200`
                   : "bg-gray-50 border-transparent cursor-default"
               }`}
             >
@@ -426,9 +412,7 @@ function TodoPanel({
               <label className="flex items-center gap-2">
                 <input type="checkbox" checked={t.done} onChange={() => toggle(t.id)} />
                 <span
-                  className={`text-sm ${
-                    t.done ? "line-through text-gray-400" : "text-gray-800"
-                  }`}
+                  className={`text-sm ${t.done ? "line-through text-gray-400" : "text-gray-800"}`}
                 >
                   {t.text}
                 </span>
@@ -437,14 +421,8 @@ function TodoPanel({
                 <div className="text-amber-500 text-xs">
                   {"★".repeat(Math.min(t.stars || 0, 3))}
                 </div>
-                <StarEdit
-                  value={t.stars || 0}
-                  onChange={(v) => setItemStars(t.id, v)}
-                />
-                <button
-                  onClick={() => remove(t.id)}
-                  className="text-xs text-gray-500 hover:text-gray-800"
-                >
+                <StarEdit value={t.stars || 0} onChange={(v) => setItemStars(t.id, v)} />
+                <button onClick={() => remove(t.id)} className="text-xs text-gray-500 hover:text-gray-800">
                   삭제
                 </button>
               </div>
@@ -459,7 +437,7 @@ function TodoPanel({
   );
 }
 
-// ── Goals (연도별) ────────────────────────────────────────────────
+// ── 목표 ─────────────────────────────────────────────────────────
 const PRIORITY: Record<number, { label: string; icon: string }> = {
   1: { label: "1순위", icon: "🔴" },
   2: { label: "2순위", icon: "🟠" },
@@ -486,12 +464,7 @@ function GoalsPanel({
       ...goalsByYear,
       [year]: [
         ...list,
-        {
-          id: crypto.randomUUID(),
-          title: title.trim(),
-          done: false,
-          prio: prio === "" ? undefined : Number(prio),
-        },
+        { id: crypto.randomUUID(), title: title.trim(), done: false, prio: prio === "" ? undefined : Number(prio) },
       ],
     });
     setTitle("");
@@ -518,10 +491,7 @@ function GoalsPanel({
     const list = goalsByYear[year] || [];
     setGoalsByYear({
       ...goalsByYear,
-      [year]: list.map((g: any) => ({
-        ...g,
-        prio: p === "" ? undefined : Number(p),
-      })),
+      [year]: list.map((g: any) => ({ ...g, prio: p === "" ? undefined : Number(p) })),
     });
   };
 
@@ -540,42 +510,28 @@ function GoalsPanel({
         </div>
       </div>
       <div className="p-4">
-        <div className="flex flex-col sm:flex-row gap-2 mb-3">
-          <Input
-            value={title}
-            onChange={setTitle}
-            placeholder={`${year}년 목표 제목`}
-            className="flex-1"
-          />
+        {/* 입력 레이아웃 (절제 목록과 완전 동일한 그리드/폭) */}
+        <div className="grid grid-cols-1 sm:grid-cols-6 gap-2 mb-3">
+          <Input value={title} onChange={setTitle} placeholder={`${year}년 목표 제목`} className="sm:col-span-4" />
           <select
             value={prio}
             onChange={(e) => setPrio(e.target.value)}
-            className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+            className="rounded-xl border border-gray-200 px-3 py-2 text-sm sm:col-span-1"
           >
             <option value=""></option>
             <option value="1">1순위 🔴</option>
             <option value="2">2순위 🟠</option>
             <option value="3">3순위 🟢</option>
           </select>
-          <Button onClick={add}>추가</Button>
+          <Button onClick={add} className="sm:col-span-1">추가</Button>
         </div>
+
         <div className="space-y-2">
           {list.map((g: any) => (
-            <div
-              key={g.id}
-              className="p-3 rounded-xl border border-gray-200 flex items-center justify-between"
-            >
+            <div key={g.id} className="p-3 rounded-xl border border-gray-200 flex items-center justify-between">
               <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={g.done}
-                  onChange={() => toggle(g.id)}
-                />
-                <span
-                  className={`text-sm ${
-                    g.done ? "line-through text-gray-400" : "text-gray-800"
-                  }`}
-                >
+                <input type="checkbox" checked={g.done} onChange={() => toggle(g.id)} />
+                <span className={`text-sm ${g.done ? "line-through text-gray-400" : "text-gray-800"}`}>
                   {g.prio ? <span className="mr-1">{PRIORITY[g.prio]?.icon}</span> : null}
                   {g.title}
                 </span>
@@ -591,28 +547,27 @@ function GoalsPanel({
                   <option value={2}>2순위 🟠</option>
                   <option value={3}>3순위 🟢</option>
                 </select>
-                <button
-                  onClick={() => remove(g.id)}
-                  className="text-xs text-gray-500 hover:text-gray-800"
-                >
-                  삭제
-                </button>
+                <button onClick={() => remove(g.id)} className="text-xs text-gray-500 hover:text-gray-800">삭제</button>
               </div>
             </div>
           ))}
-          {list.length === 0 && (
-            <div className="text-sm text-gray-500">{year}년 목표를 추가해 보세요.</div>
-          )}
+          {list.length === 0 && <div className="text-sm text-gray-500">{year}년 목표를 추가해 보세요.</div>}
         </div>
       </div>
     </Card>
   );
 }
 
-// ── 절제 목록 (하지 말 것) ─────────────────────────────────────────
-function StopPanel({ list, setList }: { list: any[]; setList: (v: any[]) => void }) {
-  const [text, setText] = React.useState("");
-  const [prio, setPrio] = React.useState("");
+// ── 절제 목록 (하지 말 것) ────────────────────────────────────────
+function StopPanel({
+  list,
+  setList,
+}: {
+  list: any[];
+  setList: (v: any[]) => void;
+}) {
+  const [text, setText] = useState("");
+  const [prio, setPrio] = useState("");
 
   const add = () => {
     if (!text.trim()) return;
@@ -623,13 +578,10 @@ function StopPanel({ list, setList }: { list: any[]; setList: (v: any[]) => void
     setText("");
     setPrio("");
   };
-
-  const toggle = (id: string) => {
-    setList(list.map((t: any) => (t.id === id ? { ...t, done: !t.done } : t)));
-  };
-  const remove = (id: string) => {
-    setList(list.filter((t: any) => t.id !== id));
-  };
+  const toggle = (id: string) => setList(list.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
+  const remove = (id: string) => setList(list.filter((t) => t.id !== id));
+  const changePrio = (id: string, p: string) =>
+    setList(list.map((t) => (t.id === id ? { ...t, prio: p === "" ? undefined : Number(p) } : t)));
 
   const ordered = [...list].sort((a: any, b: any) => (a.prio ?? 99) - (b.prio ?? 99));
 
@@ -637,7 +589,8 @@ function StopPanel({ list, setList }: { list: any[]; setList: (v: any[]) => void
     <Card>
       <div className="p-4 border-b border-gray-100 font-semibold text-gray-900">절제 목록</div>
       <div className="p-4 space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-6 gap-2 items-center">
+        {/* 입력 레이아웃 (목표와 동일한 그리드/폭으로 통일) */}
+        <div className="grid grid-cols-1 sm:grid-cols-6 gap-2">
           <Input value={text} onChange={setText} placeholder="절제할 행동 입력" className="sm:col-span-4" />
           <select
             value={prio}
@@ -651,6 +604,7 @@ function StopPanel({ list, setList }: { list: any[]; setList: (v: any[]) => void
           </select>
           <Button onClick={add} className="sm:col-span-1">추가</Button>
         </div>
+
         <ul className="space-y-2">
           {ordered.map((t: any) => (
             <li key={t.id} className="p-3 rounded-xl border border-gray-200 flex items-center justify-between">
@@ -661,7 +615,19 @@ function StopPanel({ list, setList }: { list: any[]; setList: (v: any[]) => void
                   {t.text}
                 </span>
               </label>
-              <button onClick={() => remove(t.id)} className="text-xs text-gray-500 hover:text-gray-800">삭제</button>
+              <div className="flex items-center gap-2">
+                <select
+                  value={t.prio ?? ""}
+                  onChange={(e) => changePrio(t.id, e.target.value)}
+                  className="rounded-xl border border-gray-200 px-2 py-1 text-xs"
+                >
+                  <option value=""></option>
+                  <option value={1}>1순위 🔴</option>
+                  <option value={2}>2순위 🟠</option>
+                  <option value={3}>3순위 🟢</option>
+                </select>
+                <button onClick={() => remove(t.id)} className="text-xs text-gray-500 hover:text-gray-800">삭제</button>
+              </div>
             </li>
           ))}
           {ordered.length === 0 && <div className="text-sm text-gray-500">절제 항목을 추가하세요.</div>}
@@ -671,7 +637,7 @@ function StopPanel({ list, setList }: { list: any[]; setList: (v: any[]) => void
   );
 }
 
-// ── 현재 자산 목록 (PIN 잠금, 12개월 롤링, 사유 줄바꿈 처리) ────────
+// ── 자산 (PIN, 12개월, 사유/오버플로우 처리) ─────────────────────
 function AssetsPanel({
   assets,
   setAssets,
@@ -680,9 +646,7 @@ function AssetsPanel({
   setAssets: (v: any) => void;
 }) {
   const now = new Date();
-  const [anchor, setAnchor] = useState(
-    monthLabel(now.getFullYear(), now.getMonth())
-  );
+  const [anchor, setAnchor] = useState(monthLabel(now.getFullYear(), now.getMonth()));
   const [month, setMonth] = useState(anchor);
   const [assetName, setAssetName] = useState("");
   const [amount, setAmount] = useState(0);
@@ -696,29 +660,14 @@ function AssetsPanel({
   const [pinError, setPinError] = useState("");
 
   const tryUnlock = () => {
-    if (!pin) {
-      setUnlocked(true);
-      return;
-    }
-    if (inputPin === pin) {
-      setUnlocked(true);
-      setPinError("");
-    } else {
-      setPinError("PIN이 올바르지 않습니다.");
-    }
+    if (!pin) { setUnlocked(true); return; }
+    if (inputPin === pin) { setUnlocked(true); setPinError(""); } else { setPinError("PIN이 올바르지 않습니다."); }
   };
   const setNewPin = () => {
     const v = prompt("새 PIN(숫자) 설정 — 빈 값이면 잠금 해제");
-    if (v !== null) {
-      setPin(String(v));
-      setUnlocked(String(v) === "");
-      setPinError("");
-    }
+    if (v !== null) { setPin(String(v)); setUnlocked(String(v) === ""); setPinError(""); }
   };
-  const lockNow = () => {
-    if (pin) setUnlocked(false);
-    else alert("먼저 PIN을 설정하세요.");
-  };
+  const lockNow = () => { if (pin) setUnlocked(false); else alert("먼저 PIN을 설정하세요."); };
 
   // 구형 스키마 마이그레이션
   useEffect(() => {
@@ -726,9 +675,7 @@ function AssetsPanel({
     const next: any = { ...assets };
     Object.entries(next).forEach(([k, v]) => {
       if (v != null && typeof v === "number") {
-        next[k] = {
-          items: [{ id: crypto.randomUUID(), name: "총액", amount: Number(v) }],
-        };
+        next[k] = { items: [{ id: crypto.randomUUID(), name: "총액", amount: Number(v) }] };
         changed = true;
       }
     });
@@ -736,20 +683,12 @@ function AssetsPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const parseMonth = (m: string) => {
-    const [y, mm] = m.split("-").map(Number);
-    return new Date(y, mm - 1, 1);
-  };
-  const shiftAnchor = (delta: number) => {
-    const d = addMonths(parseMonth(anchor), delta);
-    setAnchor(monthLabel(d.getFullYear(), d.getMonth()));
-  };
+  const parseMonth = (m: string) => { const [y, mm] = m.split("-").map(Number); return new Date(y, mm - 1, 1); };
+  const shiftAnchor = (delta: number) => { const d = addMonths(parseMonth(anchor), delta); setAnchor(monthLabel(d.getFullYear(), d.getMonth())); };
 
   const monthsWindow = useMemo(() => {
     const s = parseMonth(anchor);
-    return Array.from({ length: 12 }, (_, i) =>
-      monthLabel(addMonths(s, i).getFullYear(), addMonths(s, i).getMonth())
-    );
+    return Array.from({ length: 12 }, (_, i) => monthLabel(addMonths(s, i).getFullYear(), addMonths(s, i).getMonth()));
   }, [anchor]);
 
   const totalsByMonth = useMemo(() => {
@@ -761,33 +700,17 @@ function AssetsPanel({
     return obj;
   }, [assets, monthsWindow]);
 
-  const chartData = monthsWindow.map((m) => ({
-    month: m,
-    total: totalsByMonth[m] ?? null,
-  }));
+  const chartData = monthsWindow.map((m) => ({ month: m, total: totalsByMonth[m] ?? null }));
 
-  const rows = useMemo(
-    () =>
-      monthsWindow
-        .filter((m) => assets[m])
-        .map((m) => ({
-          month: m,
-          items: assets[m].items,
-          total: totalsByMonth[m],
-          noteUp: assets[m].noteUp || "",
-          noteDown: assets[m].noteDown || "",
-        }))
-        .sort((a, b) => (a.month < b.month ? -1 : 1)),
-    [assets, monthsWindow, totalsByMonth]
-  );
+  const rows = useMemo(() => monthsWindow
+    .filter((m) => assets[m])
+    .map((m) => ({ month: m, items: assets[m].items, total: totalsByMonth[m], noteUp: assets[m].noteUp || "", noteDown: assets[m].noteDown || "", }))
+    .sort((a, b) => (a.month < b.month ? -1 : 1)), [assets, monthsWindow, totalsByMonth]);
 
   const addItem = () => {
     if (!month || !assetName.trim() || isNaN(Number(amount))) return;
     const entry = assets[month] || { items: [], noteUp: "", noteDown: "" };
-    const items = [
-      ...entry.items,
-      { id: crypto.randomUUID(), name: assetName.trim(), amount: Number(amount) },
-    ];
+    const items = [...entry.items, { id: crypto.randomUUID(), name: assetName.trim(), amount: Number(amount) }];
     setAssets({ ...assets, [month]: { ...entry, items } });
     setAssetName("");
     setAmount(0);
@@ -804,8 +727,7 @@ function AssetsPanel({
     if (!entry) return;
     const items = entry.items.filter((it: any) => it.id !== id);
     const next: any = { ...assets };
-    if (items.length === 0) delete next[m];
-    else next[m] = { ...entry, items };
+    if (items.length === 0) delete next[m]; else next[m] = { ...entry, items };
     setAssets(next);
   };
 
@@ -828,6 +750,7 @@ function AssetsPanel({
   return (
     <Card>
       <div className="p-4 border-b border-gray-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        {/* 제목 변경: 현재 자산 목록 */}
         <div className="font-semibold text-gray-900">현재 자산 목록</div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="secondary" onClick={() => shiftAnchor(-1)}>◀︎</Button>
@@ -845,6 +768,7 @@ function AssetsPanel({
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} tickFormatter={formatEok} />
+              {/* Tooltip의 내용이 길어도 박스 밖으로 안나가게 max-w/word-break 적용 */}
               <Tooltip
                 content={({ active, payload, label }: any) => {
                   if (!active || !payload?.length) return null;
@@ -852,13 +776,13 @@ function AssetsPanel({
                   const up = assets[label]?.noteUp;
                   const down = assets[label]?.noteDown;
                   return (
-                    <div className="bg-white/95 border border-gray-200 rounded-xl shadow p-2 text-sm max-w-[260px] break-words whitespace-pre-wrap">
+                    <div className="bg-white/95 border border-gray-200 rounded-xl shadow p-2 text-sm max-w-[280px] break-words">
                       <div className="font-semibold text-gray-900">{label}</div>
                       <div className="text-gray-800">총액: {formatEok(v)}</div>
                       {(up || down) && (
-                        <div className="mt-1 text-xs text-gray-600 space-y-1 break-words whitespace-pre-wrap">
-                          {up && <div>⬆️ {up}</div>}
-                          {down && <div>⬇️ {down}</div>}
+                        <div className="mt-1 text-xs text-gray-600 space-y-1">
+                          {up && <div className="whitespace-pre-wrap break-words">{`⬆️ ${up}`}</div>}
+                          {down && <div className="whitespace-pre-wrap break-words">{`⬇️ ${down}`}</div>}
                         </div>
                       )}
                     </div>
@@ -888,9 +812,10 @@ function AssetsPanel({
                   ))}
                 </ul>
                 {(r.noteUp || r.noteDown) && (
-                  <div className="mt-2 text-xs text-gray-600 space-y-1 break-words whitespace-pre-wrap">
-                    {r.noteUp && <div>⬆️ 증가 사유: {r.noteUp}</div>}
-                    {r.noteDown && <div>⬇️ 감소 사유: {r.noteDown}</div>}
+                  // 길이가 길어도 카드 안에서 스크롤되도록 처리
+                  <div className="mt-2 text-xs text-gray-600 space-y-1 max-h-24 overflow-y-auto pr-1">
+                    {r.noteUp && <div className="whitespace-pre-wrap break-words">⬆️ 증가 사유: {r.noteUp}</div>}
+                    {r.noteDown && <div className="whitespace-pre-wrap break-words">⬇️ 감소 사유: {r.noteDown}</div>}
                   </div>
                 )}
               </li>
@@ -919,7 +844,7 @@ function AssetsPanel({
   );
 }
 
-// ── 자유게시판 ────────────────────────────────────────────────────
+// ── 자유게시판 ───────────────────────────────────────────────────
 function Board() {
   const [posts, setPosts] = useLocalStorage("pa_board", [] as any[]);
   const [title, setTitle] = useState("");
@@ -937,35 +862,18 @@ function Board() {
     }
   };
   const adminUnlock = () => {
-    if (!adminPin) {
-      setAdminUnlocked(true);
-      return;
-    }
+    if (!adminPin) { setAdminUnlocked(true); return; }
     if (adminInput === adminPin) setAdminUnlocked(true);
     else alert("관리자 PIN이 올바르지 않습니다");
   };
 
   const add = () => {
     if (!title.trim() && !content.trim()) return;
-    setPosts([
-      {
-        id: crypto.randomUUID(),
-        title: title.trim(),
-        content: content.trim(),
-        author: author.trim() || "익명",
-        ts: Date.now(),
-      },
-      ...posts,
-    ]);
-    setTitle("");
-    setContent("");
-    setAuthor("");
+    setPosts([{ id: crypto.randomUUID(), title: title.trim(), content: content.trim(), author: author.trim() || "익명", ts: Date.now() }, ...posts]);
+    setTitle(""); setContent(""); setAuthor("");
   };
 
-  const del = (id: string) => {
-    if (!adminUnlocked) return;
-    setPosts(posts.filter((p: any) => p.id !== id));
-  };
+  const del = (id: string) => { if (!adminUnlocked) return; setPosts(posts.filter((p: any) => p.id !== id)); };
 
   return (
     <Card>
@@ -975,12 +883,7 @@ function Board() {
           <Button variant="ghost" onClick={setNewAdminPin}>관리자 PIN</Button>
           {!adminUnlocked && (
             <>
-              <Input
-                value={adminInput}
-                onChange={setAdminInput}
-                placeholder="PIN"
-                className="max-w-[120px]"
-              />
+              <Input value={adminInput} onChange={setAdminInput} placeholder="PIN" className="max-w-[120px]" />
               <Button onClick={adminUnlock}>해제</Button>
             </>
           )}
@@ -999,31 +902,17 @@ function Board() {
             <li key={p.id} className="p-3 rounded-xl border border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="font-medium text-gray-900 truncate">
-                  {p.title || "(제목 없음)"}
-                  <span className="ml-2 text-xs text-gray-500">- {p.author || "익명"}</span>
+                  {p.title || "(제목 없음)"} <span className="ml-2 text-xs text-gray-500">- {p.author || "익명"}</span>
                 </div>
                 {adminUnlocked && (
-                  <button
-                    onClick={() => del(p.id)}
-                    className="text-xs text-gray-500 hover:text-gray-800"
-                  >
-                    삭제
-                  </button>
+                  <button onClick={() => del(p.id)} className="text-xs text-gray-500 hover:text-gray-800">삭제</button>
                 )}
               </div>
-              {p.content && (
-                <div className="mt-1 text-sm text-gray-700 whitespace-pre-wrap break-words">
-                  {p.content}
-                </div>
-              )}
-              <div className="mt-1 text-xs text-gray-400">
-                {new Date(p.ts).toLocaleString()}
-              </div>
+              {p.content && <div className="mt-1 text-sm text-gray-700 whitespace-pre-wrap break-words">{p.content}</div>}
+              <div className="mt-1 text-xs text-gray-400">{new Date(p.ts).toLocaleString()}</div>
             </li>
           ))}
-          {posts.length === 0 && (
-            <div className="text-sm text-gray-500">게시글이 없습니다.</div>
-          )}
+          {posts.length === 0 && <div className="text-sm text-gray-500">게시글이 없습니다.</div>}
         </ul>
       </div>
     </Card>
@@ -1038,21 +927,18 @@ export default function App() {
   const [todos, setTodos] = useLocalStorage("pa_todos", {} as Record<string, any[]>);
   const thisYear = new Date().getFullYear();
   const [goalYear, setGoalYear] = useState(thisYear);
-  const [goalsByYear, setGoalsByYear] = useLocalStorage(
-    "pa_goals_v3",
-    {} as Record<string, any[]>
-  );
+  const [goalsByYear, setGoalsByYear] = useLocalStorage("pa_goals_v3", {} as Record<string, any[]>);
   const [assets, setAssets] = useLocalStorage("pa_assets", {} as Record<string, any>);
-  const [stops, setStops] = useLocalStorage("pa_stops", [] as any[]);
+  const [stops, setStops] = useLocalStorage("pa_stops_v2", [] as any[]);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
-      {/* NAV */}
+      {/* 상단 */}
       <header className="sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-white/70 bg-white/60 border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-xl bg-indigo-600" />
-            <span className="font-semibold">나의 어시스턴트</span>
+            <span className="font-semibold">나의 어시스턴트 · 저널</span>
           </div>
           <nav className="hidden sm:flex items-center gap-2">
             <Button variant="ghost" href="#calendar">캘린더</Button>
@@ -1075,21 +961,14 @@ export default function App() {
         </div>
       </header>
 
-      {/* CONTENT */}
+      {/* 본문 */}
       <main className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-6 space-y-8">
-        <motion.section
-          id="today"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-        >
+        <motion.section id="today" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
           <Card>
             <div className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <div className="text-sm text-indigo-600 font-medium">오늘</div>
-                <div className="text-2xl font-bold text-gray-900 mt-1">
-                  {fmtDateKey(new Date())}
-                </div>
+                <div className="text-2xl font-bold text-gray-900 mt-1">{fmtDateKey(new Date())}</div>
               </div>
               <div className="flex items-center gap-2">
                 <Button onClick={() => setSelectedDate(new Date())}>오늘 할 일</Button>
@@ -1098,13 +977,7 @@ export default function App() {
           </Card>
         </motion.section>
 
-        <motion.section
-          id="calendar"
-          initial={{ opacity: 0, y: 8 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.35 }}
-        >
+        <motion.section id="calendar" initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.35 }}>
           <SectionHeader title="이번달 할 일" />
           <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Calendar
@@ -1119,57 +992,28 @@ export default function App() {
           </div>
         </motion.section>
 
-        <motion.section
-          id="goals"
-          initial={{ opacity: 0, y: 8 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.35 }}
-        >
+        <motion.section id="goals" initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.35 }}>
           <SectionHeader title={`목표 (연도별) — ${goalYear}년`} />
           <div className="mt-4">
-            <GoalsPanel
-              goalsByYear={goalsByYear}
-              setGoalsByYear={setGoalsByYear}
-              year={goalYear}
-              setYear={setGoalYear}
-            />
+            <GoalsPanel goalsByYear={goalsByYear} setGoalsByYear={setGoalsByYear} year={goalYear} setYear={setGoalYear} />
           </div>
         </motion.section>
 
-        <motion.section
-          id="stops"
-          initial={{ opacity: 0, y: 8 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.35 }}
-        >
+        <motion.section id="stops" initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.35 }}>
           <SectionHeader title="절제 목록" />
           <div className="mt-4">
             <StopPanel list={stops} setList={setStops} />
           </div>
         </motion.section>
 
-        <motion.section
-          id="assets"
-          initial={{ opacity: 0, y: 8 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.35 }}
-        >
+        <motion.section id="assets" initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.35 }}>
           <SectionHeader title="현재 자산 목록" />
           <div className="mt-4">
             <AssetsPanel assets={assets} setAssets={setAssets} />
           </div>
         </motion.section>
 
-        <motion.section
-          id="board"
-          initial={{ opacity: 0, y: 8 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.35 }}
-        >
+        <motion.section id="board" initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.35 }}>
           <SectionHeader title="자유게시판" />
           <div className="mt-4">
             <Board />
